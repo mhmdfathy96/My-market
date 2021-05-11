@@ -114,6 +114,8 @@ class _AuthCardState extends State<AuthCard> {
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _usernameController = TextEditingController();
+  bool passwordObs=true;
+  bool confirmObs=true;
   String _selectedlocation;
 
   void _submit() async{
@@ -214,8 +216,15 @@ class _AuthCardState extends State<AuthCard> {
                     },
                   ),
                   TextFormField(
-                    decoration: InputDecoration(labelText: 'Password'),
-                    obscureText: true,
+                    decoration: InputDecoration(labelText: 'Password',
+                     suffixIcon:  IconButton(
+                          onPressed: () {
+                          setState(() {
+                            passwordObs = !passwordObs;
+                          });
+                        }, icon: Icon(passwordObs? Icons.visibility:Icons.visibility_off))
+                    ),
+                    obscureText: passwordObs,
                     controller: _passwordController,
                     validator: (value) {
                       if (value.isEmpty || value.length < 5) {
@@ -231,8 +240,16 @@ class _AuthCardState extends State<AuthCard> {
                       children: [
                         TextFormField(
                           enabled: _authMode == AuthMode.SignUp,
-                          decoration: InputDecoration(labelText: 'Confirm Password'),
-                          obscureText: true,
+                          decoration: InputDecoration(
+                              labelText: 'Confirm Password',
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                setState(() {
+                                  confirmObs = !confirmObs;
+                                });
+                              }, icon: Icon(confirmObs? Icons.visibility:Icons.visibility_off))
+                          ),
+                          obscureText: confirmObs,
                           validator: _authMode == AuthMode.SignUp
                               ? (value) {
                             if (value != _passwordController.text) {

@@ -1,12 +1,18 @@
 
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart';
+import 'package:provider/provider.dart';
 import 'package:toast/toast.dart';
 import 'package:untitled1/model/user.dart';
 import 'package:untitled1/myTools.dart';
+
+import 'auth.dart';
 
 enum Category{
 Vehicles,
@@ -50,7 +56,7 @@ class Product {
 }
 
 
-class Products with ChangeNotifier {
+class Products extends images with ChangeNotifier {
   User mUser;
   bool isloading=false;
   String selectedlocation;
@@ -198,7 +204,7 @@ class Products with ChangeNotifier {
       mListproducts.removeWhere((element) => element.id==id);
       notifyListeners();
       await http.delete(url, body: jsonEncode(id)).then((_) async {
-           await  mDatabase().deleteimage(imageurl).then((value) => issuccess=value);
+           await  deleteimage(imageurl).then((value) => issuccess=value);
             isloading=false;
           }
           );
@@ -299,11 +305,12 @@ class Products with ChangeNotifier {
       final url = Uri.parse(
               'https://flutter02-25e57-default-rtdb.firebaseio.com/products/${product.id}.json?auth=${mUser.idtoken}');
       final int  prodindex=mListproducts.indexWhere((element) => element.id==product.id);
+      final oldprod=mListproducts.firstWhere((element) => element.id==product.id);
       await http.patch(url,body: jsonEncode({
               'title': product.title,
               'description': product.description,
               'category':product.category,
-              'imageUrl': product.imageUrl?? mListproducts[prodindex].imageUrl,
+              'imageUrl': product.imageUrl?? oldprod.imageUrl,
               'datetime': product.datetime,
               'location': product.location,
               'price': product.price,
@@ -318,19 +325,48 @@ class Products with ChangeNotifier {
               title: product.title,
               description: product.description,
               category:product.category,
-              imageUrl: product.imageUrl?? mListproducts[prodindex].imageUrl,
-              datetime: product.datetime,
+              imageUrl: product.imageUrl?? oldprod.imageUrl,
+              datetime: oldprod.datetime,
               location: product.location,
               price: product.price,
               publisherid: product.publisherid,
               pubemail:mUser.email,
-              pubphone:mUser.phone,
+              pubphone:product.pubphone,
               pubusername: mUser.username,
             );
+            if(product.imageUrl != oldprod.imageUrl){
+              deleteimage(oldprod.imageUrl);
+            }
           });
       notifyListeners();
     } catch (e) {
       Toast.show("something wrong \n check your connection", context);
     }
+  }
+  loading(){
+    isloading =true;
+    notifyListeners();
+  }
+  notloading(){
+    isloading = false;
+    notifyListeners();
+  }
+
+}
+class images{
+  Future<String> uploadimage(File image,context) async {
+    String path = basename(image.path);
+    FirebaseStorage fbstorage = FirebaseStorage.instance;
+    Reference ref = fbstorage.ref().child('Ads').child(Provider.of<Auth>(context,listen: false).mUser.id).child(path);
+    UploadTask uploadtask = ref.putFile(image);
+    var snapshot = await uploadtask;
+    return snapshot.ref.getDownloadURL();
+  }
+
+  Future<bool> deleteimage(String url) async {
+    bool issuccess = false;
+    Reference ref = FirebaseStorage.instance.refFromURL(url);
+    await ref.delete().whenComplete(() => issuccess = true);
+    return issuccess;
   }
 }

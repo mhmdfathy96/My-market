@@ -74,13 +74,11 @@ class _addnewadscreenState extends State<addnewadscreen> {
       src = prod.imageUrl;
       titleController.text = prod.title;
       _selectedcategory = prod.category;
-      Provider.of<Products>(context).selectedlocation=prod.location;
+      Provider.of<Products>(context,listen: false).selectedlocation=prod.location;
       descriptionController.text = prod.description;
       priceController.text = prod.price;
       phoneController.text =prod.pubphone;
       pubormod = 'Modify';
-    }else{
-      context.read<Products>().selectedlocation=widget.mUser.location;
     }
     phoneController.text =widget.mUser.phone;
     super.initState();
@@ -90,10 +88,6 @@ class _addnewadscreenState extends State<addnewadscreen> {
   void didChangeDependencies() {
     if (widget.adId == null)
       Future.delayed(Duration(milliseconds: 500), () => mAlertcategory(context));
-
-    setState(() {
-     // _selectedlocation=widget.mUser.location;
-    });
     super.didChangeDependencies();
   }
 
@@ -143,7 +137,7 @@ class _addnewadscreenState extends State<addnewadscreen> {
                   SizedBox(
                 //    height: sy(10),
                   ),
-                  context.watch<Products>().isloading
+                  Provider.of<Products>(context).isloading
                       ? Stack(children: [
                     Center(child: mCat()),
                     Center(child: CircularProgressIndicator(backgroundColor: Colors.white,))
@@ -228,16 +222,17 @@ class _addnewadscreenState extends State<addnewadscreen> {
     }
     if (!ispicked && widget.adId == null) {
       Toast.show('please pick a photo', context);
-    } else if (imageUrl == null) {
+    } else if (imageUrl == null && ispicked) {
       try {
-        imageUrl = await mDatabase().uploadimage(fileImageArray[0]);
+        mprov.loading();
+        imageUrl = await images().uploadimage(fileImageArray[0],context);
       } catch (e) {
         Toast.show(e.toString(), context);
-        mprov.isloading = false;
+        mprov.notloading();
         return;
       }
     }
-    mprov.isloading = true;
+    mprov.loading();
     if (pubormod == 'Publish') {
       await mprov.add(context,
           title: title,
@@ -266,11 +261,9 @@ class _addnewadscreenState extends State<addnewadscreen> {
         pubusername:widget.mUser.username,
         pubphone: phonenumber,
       ),context);
-      final old=mprov.mListproducts.firstWhere((element) => element.id==widget.adId);
-       await mDatabase().deleteimage(old.imageUrl);
       }
     Navigator.of(context).pop();
-    mprov.isloading = false;
+    mprov.notloading();
   }
 
   String mgetdatetime() {

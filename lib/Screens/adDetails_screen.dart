@@ -92,9 +92,15 @@ class _adDetailsscreenState extends State<adDetailsscreen> {
                         width: double.infinity,
                        // height: sy(200),
                         color: Colors.black12,
-                        child: Image.network(
-                          thisproduct.imageUrl,
-                          fit: BoxFit.cover,
+                        child: Hero(
+                          placeholderBuilder: (ctx,size,_){
+                            return SizedBox(width: sx(250),height: sy(250),);
+                          },
+                          tag: thisproduct.id,
+                          child: Image.network(
+                            thisproduct.imageUrl,
+                            fit: BoxFit.cover,
+                          ),
                         )),
                     (widget.mUser.id==thisproduct.publisherid)?SizedBox():Positioned(
                       top: 4,

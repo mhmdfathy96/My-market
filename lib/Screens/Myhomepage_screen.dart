@@ -41,6 +41,7 @@ class _MyHomePageState extends State<MyHomePage>
   void initState() {
     super.initState();
     _mMenucontroller = MenuController(vsync: this);
+    Provider.of<Products>(context,listen: false).selectedlocation=Provider.of<Auth>(context,listen: false).mUser.location;
     context.read<Products>().mUser=context.read<Auth>().mUser;
     mUser=context.read<Auth>().mUser;
     context.read<Products>().fetchdata(context);

@@ -30,7 +30,8 @@ class mT {
   mDialog(String title, yes, {Widget mWidget,}) async {
     await showDialog(context: context, builder: (ctx) =>
         AlertDialog(
-          title: Text(title),
+          title: Text(title,
+          style: TextStyle(fontSize: 15),),
           content: mWidget,
           actions: [
             Row(
@@ -78,21 +79,4 @@ class mT {
 }
 
 
-class mDatabase {
-  Future<String> uploadimage(File image, {String userid = 'unkown'}) async {
-    String path = basename(image.path);
-    FirebaseStorage fbstorage = FirebaseStorage.instance;
-    Reference ref = fbstorage.ref().child('Ads').child(userid).child(path);
-    UploadTask uploadtask = ref.putFile(image);
-    var snapshot = await uploadtask;
-    return snapshot.ref.getDownloadURL();
-  }
 
-  Future<bool> deleteimage(String url) async {
-    bool issuccess = false;
-    Reference ref = FirebaseStorage.instance.refFromURL(url);
-    await ref.delete().whenComplete(() => issuccess = true);
-    return issuccess;
-  }
-
-}

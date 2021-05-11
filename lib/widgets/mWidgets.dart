@@ -123,12 +123,15 @@ Widget mAdslist(List<Product> myProducts, User mUser) {
                       ClipRRect(
                           borderRadius:
                           BorderRadius.circular(20),
-                          child: (Image.network(
-                            thisproduct.imageUrl,
-                            fit: BoxFit.cover,
-                            width: sx(280),
-                            height: sy(142),
-                          ))),
+                          child: Hero(
+                            tag: thisproduct.id,
+                            child: (Image.network(
+                              thisproduct.imageUrl,
+                              fit: BoxFit.cover,
+                              width: sx(280),
+                              height: sy(142),
+                            )),
+                          )),
                       (mUser.id == thisproduct.publisherid)
                           ? SizedBox()
                           : myStar(thisproduct),
@@ -183,6 +186,39 @@ Widget mCardtext(String text, {double fontsize = 25}) {
         fontSize: sx(fontsize), fontWeight: FontWeight.bold, color: Colors.black),
   ));
 }
+Widget mInput(String labeltext,
+    Function(String) mValidator,
+    TextEditingController controller,
+    {TextInputType mtextinputtype = TextInputType
+        .text, int maxlines = 1, bool obscure = false, String hint = '', Widget mIcon, Widget mprefix,Widget msuffix,bool enabled=true}) {
+  return RelativeBuilder(builder: (ctx,height,width,sy,sx)=> Container(
+    height: maxlines==1?sy(50):sy(80),
+    margin: EdgeInsets.only(
+      bottom: sy(5),
+      left: sx(10),
+      right: sx(10),
+    ),
+    child: TextFormField(
+      enabled:enabled ,
+  validator: mValidator,
+  obscureText: obscure,
+  controller: controller,
+  maxLines: maxlines,
+  keyboardType: mtextinputtype,
+  decoration: InputDecoration(
+  labelText: labeltext,
+  hintText: hint,
+  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+  contentPadding: EdgeInsets.symmetric(vertical: sy(11), horizontal: sx(15)),
+  prefixIcon: mprefix ?? SizedBox(),
+  suffixIcon: msuffix ?? SizedBox(),
+  icon: mIcon ?? SizedBox(),
+  labelStyle: TextStyle(
+  fontWeight: FontWeight.bold, fontSize: sx(18), color: Colors.black),
+  ),
+    ),
+  ));
+}
 Widget myStar(Product mprod) {
   return RelativeBuilder(builder: (ctx,height,width,sy,sx)=>LikeButton
     (
@@ -207,38 +243,7 @@ Widget myStar(Product mprod) {
 
   ));
 }
-Widget mInput(String labeltext,
-    Function(String) mValidator,
-    TextEditingController controller,
-    {TextInputType mtextinputtype = TextInputType
-        .text, int maxlines = 1, bool obscure = false, String hint = '', Widget mIcon, Widget mprefix}) {
-  return RelativeBuilder(builder: (ctx,height,width,sy,sx)=> Container(
-    height: maxlines==1?sy(50):sy(80),
-    margin: EdgeInsets.only(
-      bottom: sy(10),
-      left: sx(10),
-      right: sx(10),
-    ),
-    child: TextFormField(
-      validator: mValidator,
-      obscureText: obscure,
-      controller: controller,
-      maxLines: maxlines,
-      keyboardType: mtextinputtype,
-      decoration: InputDecoration(
-        labelText: labeltext,
-        hintText: hint,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-        contentPadding: EdgeInsets.symmetric(vertical: sy(11), horizontal: sx(15)),
-        prefix: mprefix ?? SizedBox(),
-        icon: mIcon ?? SizedBox(),
-        labelStyle: TextStyle(
-            fontWeight: FontWeight.bold, fontSize: sx(18), color: Colors.black),
-      ),
-    ),
-  ));
-}
-Widget mLocationDropdown(Function(dynamic) onchange){
+Widget mLocationDropdown(Function(dynamic) onchange,{Widget edit}){
   List<String> locations=['Alexandria',
     'Ismailiya',
     'Aswan',
@@ -268,6 +273,7 @@ Widget mLocationDropdown(Function(dynamic) onchange){
     'Wadi al-Jadid',];
   return RelativeBuilder(
     builder: (ctx,height,width,sy,sx)=> DropdownButton(
+      icon: edit,
       hint:Text("Choose your Location"),
       value:Provider.of<Products>(ctx).selectedlocation,
       items: locations.map((e) {

@@ -5,7 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:untitled1/model/product.dart';
 import 'package:untitled1/model/user.dart';
+import 'package:provider/provider.dart';
 
 class Auth with ChangeNotifier{
   String _token;
@@ -112,15 +114,16 @@ try{
   }
 
   change(String newentry,bool ispassword,User mUser) async{////////////////////////////////need edit
+    await signin(_userEmail, _password, false);
     final url=Uri.parse('https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyDhIdQbkxKtFtixD79jasxzqp2J7JkOHzg');
     try {
        final res=  await http.post(url,
-          body: jsonEncode(ispassword?{
-            'idToken': mUser.idtoken,
+          body: json.encode(ispassword?{
+            'idToken': _token,
             'password': newentry,
             'returnSecureToken': true,
           }:{
-            'idToken': mUser.idtoken,
+            'idToken': _token,
             'email': newentry,
             'returnSecureToken': true,
           } ));
@@ -134,21 +137,67 @@ try{
        _userId=resdata["localId"];
       autologout();
        notifyListeners();
+       await FirebaseFirestore.instance.collection('users').doc(_userId).update(
+           ispassword?{
+         'password':newentry,
+       }:{
+             'email':newentry,
+           });
        final pref = await SharedPreferences.getInstance();
        if(pref.containsKey("userdata")) {
          await pref.remove('userdata').then((value) {
-           final userdata = jsonEncode({
+           if(ispassword){
+             _password=newentry;
+           }
+          final userdata = jsonEncode({
              '_token': _token,
              '_expiresDate': _expiresDate.toIso8601String(),
              '_userId': _userId,
              '_userEmail': _userEmail,
+             '_username':_username,
+             '_password':_password,
+             '_phone':_phone,
+             '_location':_location,
            });
-           pref.setString('userdata', userdata);
+           pref.setString('userdata',userdata);
          });
+       }
 
-      }
+
     }catch(e){
         throw e;
+    }
+
+}
+  changeit(String type,String val,)async{
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(mUser.id).update(
+              {
+                type:val,
+              });
+      switch(type){
+        case 'username': _username=val; break;
+        case 'phone':_phone=val; break;
+        case 'location':_location=val; break;
+      }
+      final pref=await SharedPreferences.getInstance();
+      if(pref.containsKey("userdata")) {
+        await pref.remove('userdata').then((value) {
+          final userdata = jsonEncode({
+            '_token': _token,
+            '_expiresDate': _expiresDate.toIso8601String(),
+            '_userId': _userId,
+            '_userEmail': _userEmail,
+            '_username':_username,
+            '_password':_password,
+            '_phone':_phone,
+            '_location':_location,
+          });
+          pref.setString('userdata',userdata);
+        });
+      }
+    } catch (e) {
+      throw e.toString();
     }
   }
 
