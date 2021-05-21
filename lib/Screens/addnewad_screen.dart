@@ -94,6 +94,76 @@ class _addnewadscreenState extends State<addnewadscreen> {
   @override
   Widget build(BuildContext context) {
     final t = mT(context);
+
+    publishAd() async {
+      if (!_formKey.currentState.validate()) {
+        // Invalid!
+        return;
+      }
+      _formKey.currentState.save();
+      final mprov = Provider.of<Products>(context, listen: false);
+      String imageUrl;
+      var title = titleController.text;
+      var category = _selectedcategory;
+      var description = descriptionController.text;
+      var price = priceController.text;
+      var phonenumber=phoneController.text;
+      var location=Provider.of<Products>(context,listen: false).selectedlocation;
+      if (category == null) {
+        Toast.show("please select a Category", context);
+        return;
+      }
+      if (location == null) {
+        Toast.show("please select your location", context);
+        return;
+      }
+      if (!ispicked && widget.adId == null) {
+        Toast.show('please pick a photo', context);
+      } else if (imageUrl == null && ispicked) {
+        try {
+          mprov.loading();
+          imageUrl = await images().uploadimage(fileImageArray[0],context);
+        } catch (e) {
+          Toast.show(e.toString(), context);
+          mprov.notloading();
+          return;
+        }
+      }
+      mprov.loading();
+      if (pubormod == 'Publish') {
+        await mprov.add(context,
+          title: title,
+          description: description,
+          category: category,
+          imageUrl: imageUrl,
+          datetime: t.mgetdatetime(),
+          location: location,
+          price: price,
+          publisherid:widget.mUser.id,
+          pubemail: widget.mUser.email,
+          pubusername:widget.mUser.username,
+          pubphone: phonenumber,
+        );
+      } else {
+        final old=mprov.mListproducts.firstWhere((element) => element.id==widget.adId);
+        await mprov.updateproduct(Product(id: widget.adId,
+          title: title,
+          description: description,
+          category: category,
+          imageUrl: imageUrl,
+          datetime: old.datetime,
+          location: location,
+          price: price,
+          publisherid: widget.mUser.id,
+          pubemail: widget.mUser.email,
+          pubusername:widget.mUser.username,
+          pubphone: phonenumber,
+        ),context);
+      }
+      Navigator.of(context).pop();
+      mprov.notloading();
+    }
+
     usedcontext = context;
     return Scaffold(
         appBar: mAppbar("Add your Ad"),
@@ -186,7 +256,7 @@ class _addnewadscreenState extends State<addnewadscreen> {
                     alignment:
                     Alignment.lerp(Alignment.centerRight, Alignment.center, .3),
                     child: ElevatedButton(
-                      onPressed: () => publishAd(usedcontext),
+                      onPressed: () => publishAd(),
                       child: Text(pubormod),
                     ),
                   ),
@@ -198,77 +268,9 @@ class _addnewadscreenState extends State<addnewadscreen> {
       );
   }
 
-  publishAd(context) async {
-    if (!_formKey.currentState.validate()) {
-      // Invalid!
-      return;
-    }
-    _formKey.currentState.save();
-    final mprov = Provider.of<Products>(context, listen: false);
-    String imageUrl;
-    var title = titleController.text;
-    var category = _selectedcategory;
-    var description = descriptionController.text;
-    var price = priceController.text;
-    var phonenumber=phoneController.text;
-    var location=Provider.of<Products>(context,listen: false).selectedlocation;
-    if (category == null) {
-      Toast.show("please select a Category", context);
-      return;
-    }
-    if (location == null) {
-      Toast.show("please select your location", context);
-      return;
-    }
-    if (!ispicked && widget.adId == null) {
-      Toast.show('please pick a photo', context);
-    } else if (imageUrl == null && ispicked) {
-      try {
-        mprov.loading();
-        imageUrl = await images().uploadimage(fileImageArray[0],context);
-      } catch (e) {
-        Toast.show(e.toString(), context);
-        mprov.notloading();
-        return;
-      }
-    }
-    mprov.loading();
-    if (pubormod == 'Publish') {
-      await mprov.add(context,
-          title: title,
-          description: description,
-          category: category,
-          imageUrl: imageUrl,
-          datetime: mgetdatetime(),
-          location: location,
-          price: price,
-          publisherid:widget.mUser.id,
-          pubemail: widget.mUser.email,
-          pubusername:widget.mUser.username,
-          pubphone: phonenumber,
-      );
-    } else {
-      await mprov.updateproduct(Product(id: widget.adId,
-        title: title,
-        description: description,
-        category: category,
-        imageUrl: imageUrl,
-        datetime: mgetdatetime(),
-        location: location,
-        price: price,
-        publisherid: widget.mUser.id,
-        pubemail: widget.mUser.email,
-        pubusername:widget.mUser.username,
-        pubphone: phonenumber,
-      ),context);
-      }
-    Navigator.of(context).pop();
-    mprov.notloading();
-  }
 
-  String mgetdatetime() {
-    return DateFormat('dd/MM/yyyy HH:mm a').format(DateTime.now());
-  }
+
+
 
   Widget mdialogbtn(title, context) {
     return Container(

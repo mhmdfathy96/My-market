@@ -15,8 +15,9 @@ class ChatScreen extends StatefulWidget {
   final User mUser;
   final User otherUser; //username email id
   final String adId;
+  final String offer;
 
-  const ChatScreen({@required this.mUser,@required this.otherUser, this.adId});
+  const ChatScreen({@required this.mUser,@required this.otherUser, this.adId, this.offer});
   @override
   _ChatScreenState createState() => _ChatScreenState();
 }
@@ -27,11 +28,11 @@ class _ChatScreenState extends State<ChatScreen> {
   String _entry='';
   List<Message> msgs=[];
 
-  Sendmsg() async {
+  Sendmsg(String msg) async {
     FocusScope.of(context).unfocus(); //to close the keyboard
   await  FirebaseFirestore.instance.collection('chats').add(
         {
-          'msg':mController.text,
+          'msg':msg,
           'at':Timestamp.now(),
           'from':widget.mUser.id,
           'fromusername':widget.mUser.username,
@@ -45,7 +46,12 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
      }
-
+   @override
+  void initState() {
+     final offer=widget.offer?? '';
+     if(offer.isNotEmpty)Future.delayed(Duration(milliseconds: 500),()=> Sendmsg(offer));
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,62 +80,64 @@ class _ChatScreenState extends State<ChatScreen> {
                    },
                  ),
                ),
-               IconButton(icon: Icon(Icons.send),color: Theme.of(context).primaryColor, onPressed: _entry.trim().isEmpty? null:()=>Sendmsg() ),]
+               IconButton(icon: Icon(Icons.send),color: Theme.of(context).primaryColor, onPressed: _entry.trim().isEmpty? null:()=>Sendmsg(mController.text) ),]
          )),
       body: RelativeBuilder(
-    builder: (ctx,heigth,width,sy,sx)=>Column(
-        children: [
-          ListTile(
-            leading: Image.network(thisproduct.imageUrl,fit: BoxFit.cover,
-              width: sx(100),
-              height: sy(100),),
-            title: Text(thisproduct.title),
-            subtitle: Text(thisproduct.location),
-            onTap: ()=>Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=>adDetailsscreen(adID: widget.adId,mUser: context.read<Auth>().mUser,))),
-          ),
-          SizedBox(height: 20,),
-          StreamBuilder(
-            stream:FirebaseFirestore.instance.collection('chats').orderBy('at').snapshots() ,
-            builder: (ctx,snapshot){
-    /*
-          if(snapshot.connectionState==ConnectionState.waiting){
-               return CircularProgressIndicator();
-              }
+    builder: (ctx,heigth,width,sy,sx)=>SingleChildScrollView(
+      child: Column(
+          children: [
+            ListTile(
+              leading: Image.network(thisproduct.imageUrl,fit: BoxFit.cover,
+                width: sx(100),
+                height: sy(100),),
+              title: Text(thisproduct.title),
+              subtitle: Text(thisproduct.location),
+              onTap: ()=>Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=>adDetailsscreen(adID: widget.adId,mUser: context.read<Auth>().mUser,))),
+            ),
+            SizedBox(height: 20,),
+            StreamBuilder(
+              stream:FirebaseFirestore.instance.collection('chats').orderBy('at').snapshots() ,
+              builder: (ctx,snapshot){
+      /*
+            if(snapshot.connectionState==ConnectionState.waiting){
+                 return CircularProgressIndicator();
+                }
 
-     */
-              if(snapshot.data == null) return Text('No Messages available..');
-              final docs=snapshot.data.docs as List<DocumentSnapshot>;
-              if(docs != null){
-                docs.forEach((e) {
-                  if((e['to']==widget.mUser.id && e['from']==widget.otherUser.id)||(e['from']==widget.mUser.id && e['to']==widget.otherUser.id)){
-                    final existsindex=msgs.indexWhere((element) => element.id==e.id);
-                    final newmsg=Message(e.id,e['msg'],e['at'],e['from'],e['to']);
-                    if(existsindex<0){
-                      msgs.add(newmsg);
-                    }else{
-                      msgs[existsindex]=newmsg;
+       */
+                if(snapshot.data == null) return Text('No Messages available..');
+                final docs=snapshot.data.docs as List<DocumentSnapshot>;
+                if(docs != null){
+                  docs.forEach((e) {
+                    if((e['to']==widget.mUser.id && e['from']==widget.otherUser.id)||(e['from']==widget.mUser.id && e['to']==widget.otherUser.id)){
+                      final existsindex=msgs.indexWhere((element) => element.id==e.id);
+                      final newmsg=Message(e.id,e['msg'],e['at'],e['from'],e['to']);
+                      if(existsindex<0){
+                        msgs.add(newmsg);
+                      }else{
+                        msgs[existsindex]=newmsg;
+                      }
                     }
-                  }
-                });
+                  });
+                }
+                if(msgs.length==0) {
+      return Center(
+      child: Text('No messages Available..'),
+      );
+      }else{
+                return ListView.builder(
+                    shrinkWrap: true,
+                      itemCount: msgs.length,
+                    itemBuilder: (ctx,index){
+                        final thismsg=msgs[index];
+                      return msg(thismsg.msg, thismsg.from==widget.mUser.id,thismsg.at);
+                    }
+                );
               }
-              if(msgs.length==0) {
-    return Center(
-    child: Text('No messages Available..'),
-    );
-    }else{
-              return ListView.builder(
-                  shrinkWrap: true,
-                    itemCount: msgs.length,
-                  itemBuilder: (ctx,index){
-                      final thismsg=msgs[index];
-                    return msg(thismsg.msg, thismsg.from==widget.mUser.id,thismsg.at);
-                  }
-              );
-            }
-              },
-          ),
-        ],
-      )),
+                },
+            ),
+          ],
+        ),
+    )),
       );
   }
 

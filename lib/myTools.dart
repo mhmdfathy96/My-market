@@ -24,7 +24,9 @@ class mT {
   mT(this.context);
 
 
-
+  String mgetdatetime() {
+    return DateFormat('dd/MM/yyyy HH:mm a').format(DateTime.now());
+  }
 
 
   mDialog(String title, yes, {Widget mWidget,}) async {

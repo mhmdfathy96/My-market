@@ -40,7 +40,7 @@ class _MyChatsScreenState extends State<MyChatsScreen> {
               CircularProgressIndicator();
             }
 
-            if(snapshot.data == null) return Text('No Chats available..');
+            if(snapshot.data == null) return Center(child: Text('No Chats available..'));
             final docs=snapshot.data.docs as List<DocumentSnapshot>;
             if(docs != null){
               bool isme;

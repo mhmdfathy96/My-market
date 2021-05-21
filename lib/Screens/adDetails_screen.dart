@@ -1,5 +1,6 @@
 
 import 'package:clipboard/clipboard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,8 @@ class adDetailsscreen extends StatefulWidget {
 class _adDetailsscreenState extends State<adDetailsscreen> {
   bool isfloationpressed = false;
   var thisproduct;
+  var mController=TextEditingController();
+  var offerController=TextEditingController();
 
 @override
   void initState() {
@@ -36,6 +39,20 @@ class _adDetailsscreenState extends State<adDetailsscreen> {
   @override
   Widget build(BuildContext context)  {
     final t = mT(context);
+
+    reportdialog()async{
+      await t.mDialog('Tell us why you reporting this Ad', ()=>reportfn(mController.text, t.mgetdatetime()),
+          mWidget: mInput('..', (String value) {
+          },mController,
+          ));
+    }
+    makeoffer() async{
+      await t.mDialog('Type your offer', ()=>startchatwithoffer(offerController.text),
+          mWidget: mInput('..', (String value) {
+          },offerController,
+          ));
+      }
+
     thisproduct = Provider.of<Products>(context,listen: false)
         .mListproducts
         .firstWhere((element) => element.id == widget.adID);
@@ -127,7 +144,7 @@ class _adDetailsscreenState extends State<adDetailsscreen> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: sx(15)),
                           ),
-                          onPressed: reportfn,
+                          onPressed:()=> reportdialog(),
                         )),
                   ],
                 ),
@@ -209,6 +226,7 @@ class _adDetailsscreenState extends State<adDetailsscreen> {
   allAdsforuser()=>Navigator.push(context, MaterialPageRoute(builder: (_)=> AllAdsforUser(otherUser:User(email:thisproduct.pubemail,id:thisproduct.publisherid,phone:thisproduct.pubphone,username:thisproduct.pubusername,idtoken:'',password: '',location:thisproduct.location) ,mUser: widget.mUser,) ));
 
 
+
   mPopupactions(String choice)async{
     if(choice=='Edit'){
       Navigator.of(context).pushReplacement(MaterialPageRoute(
@@ -221,10 +239,8 @@ class _adDetailsscreenState extends State<adDetailsscreen> {
   }
 
 
-  makeoffer() => print('makeoffer');
-
-  chatwithowner() {
-  Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_)=> ChatScreen(mUser: widget.mUser,otherUser:User(email:thisproduct.pubemail,id:thisproduct.publisherid,phone:thisproduct.pubphone,username:thisproduct.pubusername,idtoken:'',password: '',location:thisproduct.location),adId: thisproduct.id,)));
+  chatwithowner({String offer}) {
+  Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_)=> ChatScreen(mUser: widget.mUser,otherUser:User(email:thisproduct.pubemail,id:thisproduct.publisherid,phone:thisproduct.pubphone,username:thisproduct.pubusername,idtoken:'',password: '',location:thisproduct.location),adId: thisproduct.id,offer: offer,),),);
   }
 
 
@@ -303,6 +319,31 @@ Future<bool> btnlikeAd(bool isliked) async {
   return !isliked;
 }
 
-reportfn() {}
+reportfn(String reason,String atTime)async {
+  try {
+    Navigator.of(context).pop();
+    if(reason.isEmpty) return;
+    await FirebaseFirestore.instance.collection('reports').add(
+          {
+            'adid':thisproduct.id,
+            'pubid':thisproduct.publisherid,
+            'why':reason,
+            'date':atTime,
+          });
+    Toast.show('Thank you ${widget.mUser.username} for reporting this Ad \n We will try to react as soon as possible', context,duration: 3);
+  } catch (e) {
+    Toast.show(e.toString(), context,duration: 3);
+  }
+}
+
+  startchatwithoffer(String offer){
+      try{
+        Navigator.of(context).pop();
+        if(offer.isEmpty) return;
+        chatwithowner(offer:'My offer is $offer \n I would like to know your respond');
+      }catch(e){
+        Toast.show(e.toString(), context,duration: 3);
+      }
+  }
 
 }
